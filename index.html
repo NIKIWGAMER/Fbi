@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ваше устройство заблокировано</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Emblem_of_the_Federal_Security_Service.svg/1200px-Emblem_of_the_Federal_Security_Service.svg.png');
+            background-size: 30%;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-blend-mode: overlay;
+        }
+        
+        .warning-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(220, 38, 38, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+            }
+        }
+        
+        .countdown {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .container-overlay {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <!-- Audio element for siren sound -->
+    <audio id="sirenSound" loop>
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" type="audio/mpeg">
+    </audio>
+    
+    <div class="max-w-md w-full mx-4 bg-white rounded-lg shadow-xl overflow-hidden warning-animation border-l-8 border-red-600 container-overlay">
+        <div class="bg-red-600 p-4">
+            <div class="flex items-center">
+                <div class="bg-white p-2 rounded-full mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white">ФЕДЕРАЛЬНАЯ СЛУЖБА БЕЗОПАСНОСТИ</h1>
+                    <p class="text-white text-sm">РОССИЙСКОЙ ФЕДЕРАЦИИ</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">ВАШЕ УСТРОЙСТВО ЗАБЛОКИРОВАНО</h2>
+                <p class="text-gray-600">ФСБ Российской Федерации</p>
+            </div>
+            
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600 mr-2 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                        <h3 class="font-bold text-red-700">Код нарушения: 431-87</h3>
+                        <p class="text-red-600">Обнаружена подозрительная активность, нарушающая законодательство РФ</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <p class="text-gray-700 mb-4">Ваше устройство было заблокировано Федеральной службой безопасности Российской Федерации за нарушение законодательства в сфере информационной безопасности.</p>
+                
+                <div class="bg-gray-100 p-4 rounded-lg mb-4">
+                    <p class="font-semibold text-gray-800">Для разблокировки устройства:</p>
+                    <ol class="list-decimal list-inside text-gray-700 mt-2 space-y-1">
+                        <li>Оплатите штраф в размере 5 000 ₽</li>
+                        <li>Пройдите проверку устройства</li>
+                        <li>Дождитесь подтверждения от ФСБ</li>
+                    </ol>
+                </div>
+                
+                <div class="text-center py-4 bg-gray-200 rounded-lg mb-4">
+                    <p class="text-sm text-gray-600">Осталось времени:</p>
+                    <div class="countdown text-red-600" id="countdown">30:00</div>
+                </div>
+            </div>
+            
+            <div class="flex justify-center">
+                <button class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    ОПЛАТИТЬ ШТРАФ
+                </button>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <p class="text-xs text-gray-500">© 2025 Федеральная служба безопасности Российской Федерации. Все права защищены.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Play siren sound when page loads
+        window.onload = function() {
+            startCountdown();
+            
+            // Try to play the siren sound
+            const sirenSound = document.getElementById('sirenSound');
+            sirenSound.volume = 0.3; // Lower volume
+            
+            // Many browsers block autoplay, so we need to handle it
+            function playSiren() {
+                const promise = sirenSound.play();
+                
+                if (promise !== undefined) {
+                    promise.catch(error => {
+                        // Autoplay was prevented, show a message
+                        console.log('Autoplay prevented:', error);
+                    });
+                }
+            }
+            
+            // Try to play when user interacts with the page
+            document.addEventListener('click', function() {
+                playSiren();
+            }, { once: true });
+            
+            // Also try to play immediately
+            playSiren();
+        };
+        
+        // Countdown timer
+        function startCountdown() {
+            let minutes = 30;
+            let seconds = 0;
+            
+            const countdownElement = document.getElementById('countdown');
+            
+            const timer = setInterval(() => {
+                if (seconds === 0) {
+                    if (minutes === 0) {
+                        clearInterval(timer);
+                        countdownElement.textContent = "00:00";
+                        return;
+                    }
+                    minutes--;
+                    seconds = 59;
+                } else {
+                    seconds--;
+                }
+                
+                const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+                const formattedSeconds = seconds < 10 ? `0${seconds}` : seconds;
+                
+                countdownElement.textContent = `${formattedMinutes}:${formattedSeconds}`;
+            }, 1000);
+        }
+        
+        // Fake loading when button is clicked
+        document.querySelector('button').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Соединение с платежной системой...\n\n ФСБ блокирует устройства НАВСЕГДА и БЕЗ штрафа(тюрьма).');
+        });
+    </script>
+</body>
+</html>
