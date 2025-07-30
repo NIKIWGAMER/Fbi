@@ -3,58 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ваше устройство заблокировано</title>
+    <title>ФСБ РФ - Уведомление о блокировке</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
         
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f0f0f0;
             overflow: hidden;
             background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Emblem_of_the_Federal_Security_Service.svg/1200px-Emblem_of_the_Federal_Security_Service.svg.png');
-            background-size: 30%;
+            background-size: 35%;
             background-position: center;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-blend-mode: overlay;
+            cursor: not-allowed;
         }
         
         .warning-animation {
-            animation: pulse 2s infinite;
+            animation: pulse 1.5s infinite;
         }
         
         @keyframes pulse {
             0% {
                 box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+                transform: scale(1);
             }
-            70% {
-                box-shadow: 0 0 0 15px rgba(220, 38, 38, 0);
+            50% {
+                box-shadow: 0 0 0 12px rgba(220, 38, 38, 0.3);
+                transform: scale(1.005);
             }
             100% {
                 box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+                transform: scale(1);
             }
         }
         
         .countdown {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: bold;
+            font-family: 'Courier New', monospace;
         }
         
         .container-overlay {
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(2px);
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+        }
+        
+        .siren-light {
+            animation: sirenLight 0.8s infinite alternate;
+        }
+        
+        @keyframes sirenLight {
+            0% {
+                background-color: #b91c1c;
+            }
+            100% {
+                background-color: #7f1d1d;
+            }
+        }
+        
+        .fullscreen-block {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            pointer-events: all;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .disable-select {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        .fake-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100000;
+            mix-blend-mode: difference;
+            transform: translate(-50%, -50%);
+        }
+        
+        .glitch {
+            position: relative;
+        }
+        
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+        }
+        
+        .glitch::before {
+            color: #0ff;
+            z-index: -1;
+            animation: glitch-effect 3s infinite;
+        }
+        
+        .glitch::after {
+            color: #f0f;
+            z-index: -2;
+            animation: glitch-effect 2s infinite reverse;
+        }
+        
+        @keyframes glitch-effect {
+            0% {
+                transform: translate(0);
+            }
+            20% {
+                transform: translate(-3px, 3px);
+            }
+            40% {
+                transform: translate(-3px, -3px);
+            }
+            60% {
+                transform: translate(3px, 3px);
+            }
+            80% {
+                transform: translate(3px, -3px);
+            }
+            100% {
+                transform: translate(0);
+            }
+        }
+        
+        .fake-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #1e40af;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 10001;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .fake-notification.show {
+            transform: translateX(0);
+        }
+        
+        .fake-loading-bar {
+            height: 3px;
+            width: 0;
+            background-color: #1e40af;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10002;
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <!-- Audio element for siren sound -->
+<body class="bg-gray-100 flex items-center justify-center min-h-screen disable-select">
+    <!-- Fake system cursor -->
+    <div class="fake-cursor" id="fakeCursor"></div>
+    
+    <!-- Fake loading bar -->
+    <div class="fake-loading-bar" id="fakeLoadingBar"></div>
+    
+    <!-- Fake system notification -->
+    <div class="fake-notification" id="fakeNotification">
+        <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>Обнаружена вредоносная активность</span>
+        </div>
+    </div>
+    
+    <!-- Audio elements -->
     <audio id="sirenSound" loop>
         <source src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" type="audio/mpeg">
     </audio>
+    <audio id="errorSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-remove-2578.mp3" type="audio/mpeg">
+    </audio>
     
-    <div class="max-w-md w-full mx-4 bg-white rounded-lg shadow-xl overflow-hidden warning-animation border-l-8 border-red-600 container-overlay">
-        <div class="bg-red-600 p-4">
+    <!-- Full screen overlay to prevent access -->
+    <div class="fullscreen-block"></div>
+    
+    <div class="max-w-md w-full mx-4 bg-white rounded-lg shadow-xl overflow-hidden warning-animation border-l-8 border-red-600 container-overlay" style="z-index: 10000;">
+        <div class="siren-light p-4">
             <div class="flex items-center">
                 <div class="bg-white p-2 rounded-full mr-3">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,7 +209,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold text-white">ФЕДЕРАЛЬНАЯ СЛУЖБА БЕЗОПАСНОСТИ</h1>
-                    <p class="text-white text-sm">РОССИЙСКОЙ ФЕДЕРАЦИИ</p>
+                    <p class="text-white text-sm">ФСБ РОССИИ</p>
                 </div>
             </div>
         </div>
@@ -71,7 +217,7 @@
         <div class="p-6">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">ВАШЕ УСТРОЙСТВО ЗАБЛОКИРОВАНО</h2>
-                <p class="text-gray-600">ФСБ Российской Федерации</p>
+                <p class="text-gray-600">Система мониторинга интернет-активности ФСБ России</p>
             </div>
             
             <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -80,61 +226,165 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <div>
-                        <h3 class="font-bold text-red-700">Код нарушения: 431-87</h3>
-                        <p class="text-red-600">Обнаружена подозрительная активность, нарушающая законодательство РФ</p>
+                        <h3 class="font-bold text-red-700">Код нарушения: 431-87-29</h3>
+                        <p class="text-red-600">Обнаружена противоправная деятельность в сети Интернет (ст. 272 УК РФ)</p>
+                        <p class="text-xs text-red-500 mt-1">Идентификатор сессии: FSBRF-<span id="sessionId">XXXXXX</span></p>
                     </div>
                 </div>
             </div>
             
             <div class="mb-6">
-                <p class="text-gray-700 mb-4">Ваше устройство было заблокировано Федеральной службой безопасности Российской Федерации за нарушение законодательства в сфере информационной безопасности.</p>
+                <p class="text-gray-700 mb-4">Ваше устройство было заблокировано Системой мониторинга интернет-активности Федеральной службы безопасности Российской Федерации в соответствии с Федеральным законом № 149-ФЗ "Об информации, информационных технологиях и о защите информации".</p>
+                
+                <div class="bg-gray-100 p-4 rounded-lg mb-4">
+                    <p class="font-semibold text-gray-800">Основание для блокировки:</p>
+                    <ul class="list-disc list-inside text-gray-700 mt-2 space-y-1 text-sm">
+                        <li>Посещение запрещенных ресурсов</li>
+                        <li>Распространение экстремистских материалов</li>
+                        <li>Попытка доступа к закрытым государственным ресурсам</li>
+                    </ul>
+                </div>
                 
                 <div class="bg-gray-100 p-4 rounded-lg mb-4">
                     <p class="font-semibold text-gray-800">Для разблокировки устройства:</p>
                     <ol class="list-decimal list-inside text-gray-700 mt-2 space-y-1">
-                        <li>Оплатите штраф в размере 5 000 ₽</li>
-                        <li>Пройдите проверку устройства</li>
-                        <li>Дождитесь подтверждения от ФСБ</li>
+                        <li>Оплатите административный штраф в размере 5 000 ₽</li>
+                        <li>Подтвердите личность через Госуслуги</li>
+                        <li>Дождитесь проверки вашего устройства</li>
                     </ol>
+                    <p class="text-xs text-gray-500 mt-2">В случае неуплаты в течение 30 минут будет возбуждено уголовное дело по ст. 272 УК РФ</p>
                 </div>
                 
                 <div class="text-center py-4 bg-gray-200 rounded-lg mb-4">
-                    <p class="text-sm text-gray-600">Осталось времени:</p>
+                    <p class="text-sm text-gray-600">До передачи данных в следственные органы:</p>
                     <div class="countdown text-red-600" id="countdown">30:00</div>
+                    <p class="text-xs text-gray-500 mt-1">После истечения времени сумма штрафа увеличится до 15 000 ₽</p>
                 </div>
             </div>
             
-            <div class="flex justify-center">
-                <button class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center">
+            <div class="flex flex-col space-y-3">
+                <button id="paymentButton" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
                     ОПЛАТИТЬ ШТРАФ
                 </button>
+                
+                <button id="verifyButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    ПОДТВЕРДИТЬ ЛИЧНОСТЬ ЧЕРЕЗ ГОСУСЛУГИ
+                </button>
             </div>
             
             <div class="mt-6 text-center">
-                <p class="text-xs text-gray-500">© 2025 Федеральная служба безопасности Российской Федерации. Все права защищены.</p>
+                <p class="text-xs text-gray-500">© 2025 Федеральная служба безопасности Российской Федерации. Все права защищены.<br>Контактный центр ФСБ России: 8 (800) 555-55-50</p>
             </div>
         </div>
     </div>
 
     <script>
+        // Generate random session ID
+        function generateSessionId() {
+            const chars = '0123456789ABCDEF';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // Set random session ID
+        document.getElementById('sessionId').textContent = generateSessionId();
+        
+        // Fake cursor movement
+        document.addEventListener('mousemove', function(e) {
+            const cursor = document.getElementById('fakeCursor');
+            cursor.style.left = e.pageX + 'px';
+            cursor.style.top = e.pageY + 'px';
+            
+            // Randomly lag the fake cursor
+            if (Math.random() > 0.7) {
+                setTimeout(() => {
+                    cursor.style.left = e.pageX + 'px';
+                    cursor.style.top = e.pageY + 'px';
+                }, 50);
+            }
+        });
+        
+        // Block keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Show fake notification when user tries to use keyboard
+            if (e.ctrlKey || e.altKey || e.metaKey) {
+                showNotification('Использование системных сочетаний клавиш заблокировано');
+            }
+            
+            return false;
+        }, true);
+        
+        // Block right click
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showNotification('Контекстное меню заблокировано системой безопасности');
+            return false;
+        }, false);
+        
+        // Show fake notification
+        function showNotification(message) {
+            const notification = document.getElementById('fakeNotification');
+            notification.querySelector('span').textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Fake loading bar
+        function simulateLoading() {
+            const loadingBar = document.getElementById('fakeLoadingBar');
+            let width = 0;
+            const interval = setInterval(() => {
+                width += Math.random() * 10;
+                loadingBar.style.width = width + '%';
+                
+                if (width >= 100) {
+                    clearInterval(interval);
+                    loadingBar.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingBar.style.width = '0';
+                        loadingBar.style.opacity = '1';
+                        simulateLoading();
+                    }, 1000);
+                }
+            }, 200);
+        }
+        
         // Play siren sound when page loads
         window.onload = function() {
             startCountdown();
+            simulateLoading();
+            
+            // Show initial notification after delay
+            setTimeout(() => {
+                showNotification('Обнаружена вредоносная активность');
+            }, 1500);
             
             // Try to play the siren sound
             const sirenSound = document.getElementById('sirenSound');
-            sirenSound.volume = 0.3; // Lower volume
+            const errorSound = document.getElementById('errorSound');
+            sirenSound.volume = 0.4;
+            errorSound.volume = 0.6;
             
-            // Many browsers block autoplay, so we need to handle it
             function playSiren() {
                 const promise = sirenSound.play();
                 
                 if (promise !== undefined) {
                     promise.catch(error => {
-                        // Autoplay was prevented, show a message
                         console.log('Autoplay prevented:', error);
                     });
                 }
@@ -143,10 +393,16 @@
             // Try to play when user interacts with the page
             document.addEventListener('click', function() {
                 playSiren();
+                document.getElementById('paymentButton').focus();
             }, { once: true });
             
             // Also try to play immediately
             playSiren();
+            
+            // Prevent leaving the page
+            window.onbeforeunload = function() {
+                return "Ваше устройство заблокировано ФСБ. Закрытие этой страницы приведет к передаче данных в следственные органы!";
+            };
         };
         
         // Countdown timer
@@ -161,12 +417,23 @@
                     if (minutes === 0) {
                         clearInterval(timer);
                         countdownElement.textContent = "00:00";
+                        countdownElement.classList.add('glitch');
+                        countdownElement.setAttribute('data-text', '00:00');
+                        document.querySelector('.warning-animation').style.animationDuration = "0.7s";
+                        document.querySelector('.siren-light').style.animationDuration = "0.3s";
+                        showNotification('Срок оплаты истек! Данные переданы в следственные органы');
                         return;
                     }
                     minutes--;
                     seconds = 59;
                 } else {
                     seconds--;
+                }
+                
+                // Change color when time is running out
+                if (minutes < 5) {
+                    countdownElement.classList.add('text-red-700');
+                    countdownElement.classList.remove('text-red-600');
                 }
                 
                 const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
@@ -176,11 +443,105 @@
             }, 1000);
         }
         
-        // Fake loading when button is clicked
-        document.querySelector('button').addEventListener('click', function(e) {
+        // Fake payment processing
+        document.getElementById('paymentButton').addEventListener('click', function(e) {
             e.preventDefault();
-            alert('Соединение с платежной системой...\n\n ФСБ блокирует устройства НАВСЕГДА и БЕЗ штрафа(тюрьма).');
+            e.stopPropagation();
+            
+            const errorSound = document.getElementById('errorSound');
+            const originalText = this.innerHTML;
+            
+            // Show fake processing
+            this.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                ПОДКЛЮЧЕНИЕ К ПЛАТЕЖНОЙ СИСТЕМЕ...
+            `;
+            this.disabled = true;
+            
+            // Simulate connection progress
+            setTimeout(() => {
+                this.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    ПРОВЕРКА ДАННЫХ...
+                `;
+                showNotification('Подключение к платежному шлюзу ФСБ...');
+            }, 2000);
+            
+            // Show fake error after delay
+            setTimeout(() => {
+                errorSound.play();
+                this.innerHTML = originalText;
+                this.disabled = false;
+                
+                const errorMessages = [
+                    "ОШИБКА: Соединение с платежной системой отклонено. Проверьте интернет-соединение.",
+                    "ОШИБКА 403: Доступ к платежному шлюзу запрещен. Возможно, ваш IP-адрес в черном списке.",
+                    "ОШИБКА: Не удалось проверить ваши данные. Попробуйте подтвердить личность через Госуслуги."
+                ];
+                
+                const randomError = errorMessages[Math.floor(Math.random() * errorMessages.length)];
+                alert(randomError + '\n\nКод ошибки: FSB-PAY-' + Math.floor(1000 + Math.random() * 9000));
+                showNotification('Ошибка платежа: ' + randomError.split(':')[0]);
+            }, 5000);
         });
+        
+        // Fake verification button
+        document.getElementById('verifyButton').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const errorSound = document.getElementById('errorSound');
+            const originalText = this.innerHTML;
+            
+            // Show fake processing
+            this.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                ПОДКЛЮЧЕНИЕ К ГОСУСЛУГАМ...
+            `;
+            this.disabled = true;
+            
+            // Show fake error after delay
+            setTimeout(() => {
+                errorSound.play();
+                this.innerHTML = originalText;
+                this.disabled = false;
+                alert('ОШИБКА: Не удалось подключиться к порталу Госуслуг. Проверьте интернет-соединение или попробуйте позже.\n\nКод ошибки: GOSUSLUGI-ERR-' + Math.floor(1000 + Math.random() * 9000));
+                showNotification('Ошибка подключения к Госуслугам');
+            }, 4000);
+        });
+        
+        // Prevent any other clicks on the page
+        document.addEventListener('click', function(e) {
+            if (e.target.id !== 'paymentButton' && e.target.id !== 'verifyButton') {
+                e.preventDefault();
+                e.stopPropagation();
+                showNotification('Доступ ограничен системой безопасности ФСБ');
+            }
+        }, true);
+        
+        // Random system notifications
+        setInterval(() => {
+            const messages = [
+                'Идет проверка системы...',
+                'Обнаружены подозрительные процессы',
+                'Сканирование файловой системы...',
+                'Проверка сетевой активности',
+                'Мониторинг трафика...'
+            ];
+            
+            if (Math.random() > 0.7) {
+                showNotification(messages[Math.floor(Math.random() * messages.length)]);
+            }
+        }, 10000);
     </script>
 </body>
 </html>
